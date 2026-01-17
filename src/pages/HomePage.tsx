@@ -10,7 +10,7 @@ const HomePage = () => {
   const features = [
     {
       icon: Users,
-      title: 'Multi-Tenant',
+      title: 'Esclusivo',
       description: 'Cada academia tem seu próprio espaço isolado e seguro'
     },
     {
@@ -37,9 +37,9 @@ const HomePage = () => {
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center bg-primary text-primary-foreground font-bold">
-              GF
+              RT
             </div>
-            <span className="font-bold text-xl text-foreground">GymFit System</span>
+            <span className="font-bold text-xl text-foreground">Registro Total</span>
           </div>
           <a href={whatsappLink} target="_blank" rel="noopener noreferrer">
             <Button variant="default" size="sm">
@@ -76,7 +76,7 @@ const HomePage = () => {
       <section className="py-16 bg-card">
         <div className="container mx-auto px-4">
           <h2 className="text-3xl font-bold text-center text-foreground mb-12">
-            Por que escolher o GymFit System?
+            Por que escolher o Registro Total?
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {features.map((feature, index) => (
@@ -166,7 +166,7 @@ const HomePage = () => {
       <footer className="py-8 border-t border-border">
         <div className="container mx-auto px-4 text-center">
           <p className="text-muted-foreground text-sm">
-            © {new Date().getFullYear()} GymFit System - Soluções em Automação para Academias
+            © {new Date().getFullYear()} Registro Total - Soluções em Automação para Academias
           </p>
           <p className="text-muted-foreground text-xs mt-2">
             Desenvolvido para simplificar a gestão de fichas de treino

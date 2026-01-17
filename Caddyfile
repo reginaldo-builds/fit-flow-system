@@ -1,7 +1,0 @@
-:80 {
-    root * /usr/share/nginx/html
-    file_server
-
-    # Fallback SPA (ESSENCIAL)
-    try_files {path} /index.html
-}

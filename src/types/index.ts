@@ -64,6 +64,11 @@ export interface FormSubmission {
   personalId: string;
   status: RequestStatus;
   
+  // Period/Validity
+  periodStart: string;
+  periodEnd: string;
+  isExpired?: boolean;
+  
   // Basic Info
   objective?: string;
   experience?: string;
@@ -81,6 +86,7 @@ export interface FormSubmission {
   activityLevel?: string;
   profession?: string;
   sleepHours?: number;
+  sleepQuality?: 'poor' | 'regular' | 'good' | 'excellent';
   hasNutritionist?: boolean;
   waterIntake?: string;
   
@@ -99,6 +105,20 @@ export interface FormSubmission {
   
   createdAt: string;
   updatedAt: string;
+}
+
+// Evolution tracking for students
+export interface StudentEvolution {
+  id: string;
+  studentId: string;
+  submissionId: string;
+  date: string;
+  weight: number;
+  height?: number;
+  sleepHours: number;
+  sleepQuality: 'poor' | 'regular' | 'good' | 'excellent';
+  trainingTime?: string;
+  notes?: string;
 }
 
 export interface WorkoutPlan {

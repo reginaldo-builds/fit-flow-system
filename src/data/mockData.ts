@@ -1,4 +1,4 @@
-import { Tenant, User, Student, CustomField, FormSubmission, WorkoutPlan } from '@/types';
+import { Tenant, User, Student, CustomField, FormSubmission, WorkoutPlan, StudentEvolution } from '@/types';
 
 // ===== TENANTS =====
 export const tenants: Tenant[] = [
@@ -472,6 +472,8 @@ export const formSubmissions: FormSubmission[] = [
     studentId: 'student-1',
     personalId: 'user-personal-1',
     status: 'pending',
+    periodStart: '2024-04-01',
+    periodEnd: '2024-05-01',
     objective: 'Emagrecimento',
     experience: 'Iniciante',
     weeklyFrequency: 4,
@@ -484,6 +486,7 @@ export const formSubmissions: FormSubmission[] = [
     activityLevel: 'Sedentário',
     profession: 'Analista de sistemas',
     sleepHours: 7,
+    sleepQuality: 'regular',
     hasNutritionist: false,
     waterIntake: 'Médio',
     preferredTime: 'Manhã',
@@ -501,6 +504,8 @@ export const formSubmissions: FormSubmission[] = [
     studentId: 'student-2',
     personalId: 'user-personal-1',
     status: 'pending',
+    periodStart: '2024-04-02',
+    periodEnd: '2024-05-02',
     objective: 'Ganho de massa',
     experience: 'Intermediário',
     weeklyFrequency: 5,
@@ -513,6 +518,7 @@ export const formSubmissions: FormSubmission[] = [
     activityLevel: 'Moderado',
     profession: 'Engenheiro civil',
     sleepHours: 6,
+    sleepQuality: 'regular',
     hasNutritionist: true,
     waterIntake: 'Alto',
     preferredTime: 'Noite',
@@ -532,6 +538,8 @@ export const formSubmissions: FormSubmission[] = [
     studentId: 'student-4',
     personalId: 'user-personal-2',
     status: 'in_progress',
+    periodStart: '2024-03-28',
+    periodEnd: '2024-04-28',
     objective: 'Condicionamento físico',
     experience: 'Avançado',
     weeklyFrequency: 6,
@@ -544,6 +552,7 @@ export const formSubmissions: FormSubmission[] = [
     activityLevel: 'Ativo',
     profession: 'Personal Trainer',
     sleepHours: 8,
+    sleepQuality: 'excellent',
     hasNutritionist: true,
     waterIntake: 'Alto',
     preferredTime: 'Tarde',
@@ -556,13 +565,15 @@ export const formSubmissions: FormSubmission[] = [
     updatedAt: '2024-04-01T11:00:00Z'
   },
   
-  // Completed
+  // Completed - current period
   {
     id: 'submission-4',
     tenantId: 'tenant-1',
     studentId: 'student-7',
     personalId: 'user-personal-3',
     status: 'completed',
+    periodStart: '2024-03-15',
+    periodEnd: '2024-05-15',
     objective: 'Reabilitação',
     experience: 'Iniciante',
     weeklyFrequency: 3,
@@ -575,6 +586,7 @@ export const formSubmissions: FormSubmission[] = [
     activityLevel: 'Sedentário',
     profession: 'Contador',
     sleepHours: 7,
+    sleepQuality: 'good',
     hasNutritionist: false,
     waterIntake: 'Baixo',
     preferredTime: 'Manhã',
@@ -587,6 +599,40 @@ export const formSubmissions: FormSubmission[] = [
     updatedAt: '2024-03-20T16:00:00Z'
   },
   
+  // Completed - old period (historical)
+  {
+    id: 'submission-4-old',
+    tenantId: 'tenant-1',
+    studentId: 'student-7',
+    personalId: 'user-personal-3',
+    status: 'completed',
+    periodStart: '2024-01-15',
+    periodEnd: '2024-03-15',
+    objective: 'Reabilitação inicial',
+    experience: 'Iniciante',
+    weeklyFrequency: 2,
+    availableTime: 30,
+    injuries: 'Hérnia de disco L4-L5 - Fase aguda',
+    diseases: 'Nenhuma',
+    medications: 'Relaxante muscular',
+    surgeries: 'Nenhuma',
+    painPoints: 'Lombar intensa',
+    activityLevel: 'Sedentário',
+    profession: 'Contador',
+    sleepHours: 5,
+    sleepQuality: 'poor',
+    hasNutritionist: false,
+    waterIntake: 'Baixo',
+    preferredTime: 'Manhã',
+    trainingLocation: 'Casa',
+    likedExercises: 'Alongamentos leves',
+    dislikedExercises: 'Qualquer exercício com carga',
+    additionalNotes: 'Início do tratamento, muita dor',
+    acceptedTerms: true,
+    createdAt: '2024-01-15T08:00:00Z',
+    updatedAt: '2024-01-20T16:00:00Z'
+  },
+  
   // Profit submissions
   {
     id: 'submission-5',
@@ -594,6 +640,8 @@ export const formSubmissions: FormSubmission[] = [
     studentId: 'student-11',
     personalId: 'user-personal-4',
     status: 'pending',
+    periodStart: '2024-04-03',
+    periodEnd: '2024-05-03',
     objective: 'Emagrecimento',
     experience: 'Iniciante',
     weeklyFrequency: 4,
@@ -606,6 +654,7 @@ export const formSubmissions: FormSubmission[] = [
     activityLevel: 'Sedentário',
     profession: 'Professora',
     sleepHours: 6,
+    sleepQuality: 'regular',
     hasNutritionist: false,
     waterIntake: 'Médio',
     preferredTime: 'Noite',
@@ -616,7 +665,118 @@ export const formSubmissions: FormSubmission[] = [
     acceptedTerms: true,
     createdAt: '2024-04-03T18:00:00Z',
     updatedAt: '2024-04-03T18:00:00Z'
+  },
+  
+  // Ana's historical submissions for evolution tracking
+  {
+    id: 'submission-ana-1',
+    tenantId: 'tenant-1',
+    studentId: 'student-1',
+    personalId: 'user-personal-1',
+    status: 'completed',
+    periodStart: '2024-01-01',
+    periodEnd: '2024-02-01',
+    objective: 'Emagrecimento',
+    experience: 'Iniciante',
+    weeklyFrequency: 3,
+    availableTime: 45,
+    injuries: 'Nenhuma',
+    diseases: 'Nenhuma',
+    medications: 'Nenhum',
+    surgeries: 'Nenhuma',
+    painPoints: 'Nenhuma',
+    activityLevel: 'Sedentário',
+    profession: 'Analista de sistemas',
+    sleepHours: 5,
+    sleepQuality: 'poor',
+    hasNutritionist: false,
+    waterIntake: 'Baixo',
+    preferredTime: 'Manhã',
+    trainingLocation: 'Academia',
+    likedExercises: 'Esteira',
+    dislikedExercises: 'Musculação',
+    additionalNotes: 'Começando do zero',
+    acceptedTerms: true,
+    createdAt: '2024-01-01T10:00:00Z',
+    updatedAt: '2024-01-05T10:00:00Z'
+  },
+  {
+    id: 'submission-ana-2',
+    tenantId: 'tenant-1',
+    studentId: 'student-1',
+    personalId: 'user-personal-1',
+    status: 'completed',
+    periodStart: '2024-02-01',
+    periodEnd: '2024-03-01',
+    objective: 'Emagrecimento',
+    experience: 'Iniciante',
+    weeklyFrequency: 4,
+    availableTime: 60,
+    injuries: 'Nenhuma',
+    diseases: 'Nenhuma',
+    medications: 'Nenhum',
+    surgeries: 'Nenhuma',
+    painPoints: 'Nenhuma',
+    activityLevel: 'Leve',
+    profession: 'Analista de sistemas',
+    sleepHours: 6,
+    sleepQuality: 'regular',
+    hasNutritionist: false,
+    waterIntake: 'Médio',
+    preferredTime: 'Manhã',
+    trainingLocation: 'Academia',
+    likedExercises: 'Esteira, bicicleta',
+    dislikedExercises: 'Burpee',
+    additionalNotes: 'Evoluindo bem',
+    acceptedTerms: true,
+    createdAt: '2024-02-01T10:00:00Z',
+    updatedAt: '2024-02-05T10:00:00Z'
+  },
+  {
+    id: 'submission-ana-3',
+    tenantId: 'tenant-1',
+    studentId: 'student-1',
+    personalId: 'user-personal-1',
+    status: 'completed',
+    periodStart: '2024-03-01',
+    periodEnd: '2024-04-01',
+    objective: 'Emagrecimento e tonificação',
+    experience: 'Iniciante',
+    weeklyFrequency: 4,
+    availableTime: 60,
+    injuries: 'Nenhuma',
+    diseases: 'Nenhuma',
+    medications: 'Nenhum',
+    surgeries: 'Nenhuma',
+    painPoints: 'Nenhuma',
+    activityLevel: 'Moderado',
+    profession: 'Analista de sistemas',
+    sleepHours: 7,
+    sleepQuality: 'good',
+    hasNutritionist: true,
+    waterIntake: 'Alto',
+    preferredTime: 'Manhã',
+    trainingLocation: 'Academia',
+    likedExercises: 'Esteira, bicicleta, musculação leve',
+    dislikedExercises: 'Burpee',
+    additionalNotes: 'Começando acompanhamento nutricional',
+    acceptedTerms: true,
+    createdAt: '2024-03-01T10:00:00Z',
+    updatedAt: '2024-03-05T10:00:00Z'
   }
+];
+
+// ===== STUDENT EVOLUTION DATA =====
+export const studentEvolutions: StudentEvolution[] = [
+  // Ana's evolution
+  { id: 'evo-1', studentId: 'student-1', submissionId: 'submission-ana-1', date: '2024-01-01', weight: 70, height: 165, sleepHours: 5, sleepQuality: 'poor', trainingTime: 'Manhã' },
+  { id: 'evo-2', studentId: 'student-1', submissionId: 'submission-ana-2', date: '2024-02-01', weight: 68, height: 165, sleepHours: 6, sleepQuality: 'regular', trainingTime: 'Manhã' },
+  { id: 'evo-3', studentId: 'student-1', submissionId: 'submission-ana-3', date: '2024-03-01', weight: 65, height: 165, sleepHours: 7, sleepQuality: 'good', trainingTime: 'Manhã' },
+  { id: 'evo-4', studentId: 'student-1', submissionId: 'submission-1', date: '2024-04-01', weight: 62, height: 165, sleepHours: 7, sleepQuality: 'good', trainingTime: 'Manhã' },
+  
+  // Gabriela's evolution (student-7)
+  { id: 'evo-5', studentId: 'student-7', submissionId: 'submission-4-old', date: '2024-01-15', weight: 65, height: 163, sleepHours: 5, sleepQuality: 'poor', trainingTime: 'Manhã' },
+  { id: 'evo-6', studentId: 'student-7', submissionId: 'submission-4', date: '2024-03-15', weight: 62, height: 163, sleepHours: 7, sleepQuality: 'good', trainingTime: 'Manhã' },
 ];
 
 // ===== WORKOUT PLANS =====
@@ -705,6 +865,18 @@ export const getWorkoutPlansByStudent = (studentId: string): WorkoutPlan[] => {
 
 export const getCustomFieldsByPersonal = (personalId: string): CustomField[] => {
   return customFields.filter(f => f.personalId === personalId);
+};
+
+export const getSubmissionsByStudent = (studentId: string): FormSubmission[] => {
+  return formSubmissions.filter(s => s.studentId === studentId).sort((a, b) => 
+    new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  );
+};
+
+export const getEvolutionsByStudent = (studentId: string): StudentEvolution[] => {
+  return studentEvolutions.filter(e => e.studentId === studentId).sort((a, b) => 
+    new Date(a.date).getTime() - new Date(b.date).getTime()
+  );
 };
 
 export const authenticateUser = (email: string, password: string, tenantId: string): User | null => {

@@ -2466,6 +2466,464 @@ def test_login_invalid_password(client):
 | PUT | `/api/settings/custom-fields/{id}` | Atualizar campo | Personal |
 | DELETE | `/api/settings/custom-fields/{id}` | Remover campo | Personal |
 | GET | `/api/settings/custom-fields/public/{personal_id}` | Campos públicos | ❌ |
+| GET | `/api/students/me` | Dados do aluno logado | Student |
+| GET | `/api/students/me/submissions` | Histórico de formulários | Student |
+| PUT | `/api/students/me/submissions/{id}` | Atualizar formulário | Student |
+| GET | `/api/students/me/evolution` | Dados de evolução | Student |
+
+---
+
+## 🎓 Funcionalidades do Portal do Aluno
+
+### Modelo de Histórico de Formulários (Student Submissions)
+
+O aluno pode ver todos os formulários enviados com histórico completo:
+
+```python
+# app/models/submission.py - Campos adicionais para período e evolução
+
+class Submission(db.Model):
+    __tablename__ = 'submissions'
+    
+    id = db.Column(db.UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    tenant_id = db.Column(db.UUID(as_uuid=True), db.ForeignKey('tenants.id'), nullable=False)
+    student_id = db.Column(db.UUID(as_uuid=True), db.ForeignKey('students.id'), nullable=False)
+    personal_id = db.Column(db.UUID(as_uuid=True), db.ForeignKey('users.id'), nullable=False)
+    status = db.Column(db.String(20), default='pending')
+    
+    # Período de validade
+    period_start = db.Column(db.Date, nullable=False)
+    period_end = db.Column(db.Date, nullable=False)
+    
+    # Dados da anamnese (JSON)
+    objective = db.Column(db.String(255))
+    experience = db.Column(db.String(100))
+    weekly_frequency = db.Column(db.Integer)
+    available_time = db.Column(db.Integer)
+    injuries = db.Column(db.Text)
+    diseases = db.Column(db.Text)
+    medications = db.Column(db.Text)
+    surgeries = db.Column(db.Text)
+    pain_points = db.Column(db.Text)
+    activity_level = db.Column(db.String(50))
+    profession = db.Column(db.String(255))
+    sleep_hours = db.Column(db.Integer)
+    sleep_quality = db.Column(db.String(20))  # poor, regular, good, excellent
+    has_nutritionist = db.Column(db.Boolean, default=False)
+    water_intake = db.Column(db.String(50))
+    preferred_time = db.Column(db.String(50))
+    training_location = db.Column(db.String(100))
+    liked_exercises = db.Column(db.Text)
+    disliked_exercises = db.Column(db.Text)
+    additional_notes = db.Column(db.Text)
+    
+    # Campos personalizados
+    custom_fields_data = db.Column(db.JSON, default=dict)
+    
+    # Termos
+    accepted_terms = db.Column(db.Boolean, default=False)
+    
+    created_at = db.Column(db.DateTime(timezone=True), default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    def is_expired(self):
+        return self.period_end < date.today()
+    
+    def can_update(self):
+        """Aluno pode atualizar se expirado ou se ficha já foi entregue"""
+        return self.is_expired() or self.status == 'completed'
+```
+
+### Modelo de Evolução do Aluno
+
+```python
+# app/models/evolution.py
+
+class StudentEvolution(db.Model):
+    __tablename__ = 'student_evolutions'
+    
+    id = db.Column(db.UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    student_id = db.Column(db.UUID(as_uuid=True), db.ForeignKey('students.id'), nullable=False)
+    submission_id = db.Column(db.UUID(as_uuid=True), db.ForeignKey('submissions.id'), nullable=False)
+    
+    # Dados de evolução
+    date = db.Column(db.Date, nullable=False)
+    weight = db.Column(db.Numeric(5, 2))
+    height = db.Column(db.Numeric(5, 2))
+    sleep_hours = db.Column(db.Integer)
+    sleep_quality = db.Column(db.String(20))  # poor, regular, good, excellent
+    training_time = db.Column(db.String(50))
+    notes = db.Column(db.Text)
+    
+    created_at = db.Column(db.DateTime(timezone=True), default=datetime.utcnow)
+    
+    # Relacionamento
+    submission = db.relationship('Submission', backref='evolution_record')
+```
+
+### SQL de Criação - Evolução
+
+```sql
+-- Tabela de Submissões (atualizada com período)
+ALTER TABLE submissions ADD COLUMN period_start DATE NOT NULL DEFAULT CURRENT_DATE;
+ALTER TABLE submissions ADD COLUMN period_end DATE NOT NULL DEFAULT (CURRENT_DATE + INTERVAL '30 days');
+ALTER TABLE submissions ADD COLUMN sleep_quality VARCHAR(20);
+
+-- Tabela de Evolução do Aluno
+CREATE TABLE student_evolutions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    student_id UUID NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+    submission_id UUID NOT NULL REFERENCES submissions(id) ON DELETE CASCADE,
+    date DATE NOT NULL,
+    weight DECIMAL(5,2),
+    height DECIMAL(5,2),
+    sleep_hours INTEGER,
+    sleep_quality VARCHAR(20),
+    training_time VARCHAR(50),
+    notes TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX idx_evolution_student ON student_evolutions(student_id);
+CREATE INDEX idx_evolution_date ON student_evolutions(date);
+```
+
+### Endpoints do Portal do Aluno
+
+```python
+# app/api/student_portal.py
+
+from flask import Blueprint, jsonify, request, g
+from flask_jwt_extended import jwt_required, get_jwt_identity
+from app.extensions import db
+from app.models import Student, Submission, StudentEvolution, User
+from app.utils.decorators import require_tenant, require_auth
+from datetime import date
+
+bp = Blueprint('student_portal', __name__)
+
+@bp.route('/me', methods=['GET'])
+@require_tenant
+@require_auth
+def get_student_profile():
+    """
+    GET /api/students/me
+    
+    Retorna dados do aluno logado
+    
+    Response 200:
+    {
+        "id": "uuid",
+        "name": "Ana Ferreira",
+        "email": "ana@email.com",
+        "whatsapp": "+5588994444444",
+        "personal": {
+            "id": "uuid",
+            "name": "João Oliveira"
+        },
+        "current_submission": { ... } ou null,
+        "has_pending_request": true/false
+    }
+    """
+    user = g.current_user
+    
+    # Busca o aluno vinculado ao usuário
+    student = Student.query.filter_by(
+        tenant_id=g.tenant_id,
+        email=user.email,
+        is_active=True
+    ).first()
+    
+    if not student:
+        return jsonify({'error': 'Student profile not found'}), 404
+    
+    # Busca submissão atual (pendente ou em progresso)
+    current_submission = Submission.query.filter_by(
+        student_id=student.id
+    ).filter(
+        Submission.status.in_(['pending', 'in_progress'])
+    ).first()
+    
+    personal = User.query.get(student.personal_id)
+    
+    return jsonify({
+        'student': student.to_dict(),
+        'personal': personal.to_dict(include_roles=False) if personal else None,
+        'current_submission': current_submission.to_dict() if current_submission else None,
+        'has_pending_request': current_submission is not None
+    })
+
+
+@bp.route('/me/submissions', methods=['GET'])
+@require_tenant
+@require_auth
+def get_student_submissions():
+    """
+    GET /api/students/me/submissions
+    
+    Retorna histórico completo de formulários do aluno
+    
+    Response 200:
+    {
+        "submissions": [
+            {
+                "id": "uuid",
+                "status": "completed",
+                "period_start": "2024-03-01",
+                "period_end": "2024-04-01",
+                "objective": "Emagrecimento",
+                "is_expired": true,
+                "can_update": true,
+                ...
+            }
+        ],
+        "total": 5
+    }
+    """
+    user = g.current_user
+    
+    student = Student.query.filter_by(
+        tenant_id=g.tenant_id,
+        email=user.email,
+        is_active=True
+    ).first()
+    
+    if not student:
+        return jsonify({'error': 'Student profile not found'}), 404
+    
+    submissions = Submission.query.filter_by(
+        student_id=student.id
+    ).order_by(Submission.created_at.desc()).all()
+    
+    return jsonify({
+        'submissions': [
+            {
+                **s.to_dict(),
+                'is_expired': s.is_expired(),
+                'can_update': s.can_update()
+            }
+            for s in submissions
+        ],
+        'total': len(submissions)
+    })
+
+
+@bp.route('/me/submissions/<submission_id>', methods=['PUT'])
+@require_tenant
+@require_auth
+def update_student_submission(submission_id):
+    """
+    PUT /api/students/me/submissions/{id}
+    
+    Atualiza formulário existente (cria nova versão mantendo histórico)
+    
+    Regras:
+    - Só pode atualizar se período expirou OU status é 'completed'
+    - Cria nova submissão com dados atualizados
+    - Submissão anterior é mantida para histórico
+    - Novo status é 'pending'
+    
+    Body:
+    {
+        "period_end": "2024-05-01",
+        "weight": 62,
+        "objective": "Manutenção",
+        "sleep_hours": 7,
+        "sleep_quality": "good",
+        ...demais campos
+    }
+    
+    Response 201:
+    {
+        "message": "Submission updated successfully",
+        "new_submission": { ... },
+        "evolution_recorded": true
+    }
+    """
+    user = g.current_user
+    data = request.get_json()
+    
+    student = Student.query.filter_by(
+        tenant_id=g.tenant_id,
+        email=user.email,
+        is_active=True
+    ).first()
+    
+    if not student:
+        return jsonify({'error': 'Student profile not found'}), 404
+    
+    old_submission = Submission.query.filter_by(
+        id=submission_id,
+        student_id=student.id
+    ).first()
+    
+    if not old_submission:
+        return jsonify({'error': 'Submission not found'}), 404
+    
+    if not old_submission.can_update():
+        return jsonify({'error': 'Cannot update this submission yet'}), 400
+    
+    # Cria nova submissão baseada na anterior
+    new_submission = Submission(
+        tenant_id=g.tenant_id,
+        student_id=student.id,
+        personal_id=old_submission.personal_id,
+        status='pending',
+        period_start=date.today(),
+        period_end=data.get('period_end', date.today() + timedelta(days=30)),
+        # Copia dados da submissão anterior, sobrescrevendo com novos
+        objective=data.get('objective', old_submission.objective),
+        experience=data.get('experience', old_submission.experience),
+        weekly_frequency=data.get('weekly_frequency', old_submission.weekly_frequency),
+        available_time=data.get('available_time', old_submission.available_time),
+        injuries=data.get('injuries', old_submission.injuries),
+        diseases=data.get('diseases', old_submission.diseases),
+        medications=data.get('medications', old_submission.medications),
+        surgeries=data.get('surgeries', old_submission.surgeries),
+        pain_points=data.get('pain_points', old_submission.pain_points),
+        activity_level=data.get('activity_level', old_submission.activity_level),
+        profession=data.get('profession', old_submission.profession),
+        sleep_hours=data.get('sleep_hours', old_submission.sleep_hours),
+        sleep_quality=data.get('sleep_quality', old_submission.sleep_quality),
+        has_nutritionist=data.get('has_nutritionist', old_submission.has_nutritionist),
+        water_intake=data.get('water_intake', old_submission.water_intake),
+        preferred_time=data.get('preferred_time', old_submission.preferred_time),
+        training_location=data.get('training_location', old_submission.training_location),
+        liked_exercises=data.get('liked_exercises', old_submission.liked_exercises),
+        disliked_exercises=data.get('disliked_exercises', old_submission.disliked_exercises),
+        additional_notes=data.get('additional_notes', old_submission.additional_notes),
+        custom_fields_data=data.get('custom_fields_data', old_submission.custom_fields_data),
+        accepted_terms=True
+    )
+    
+    db.session.add(new_submission)
+    
+    # Registra evolução se peso foi informado
+    evolution_recorded = False
+    if 'weight' in data:
+        evolution = StudentEvolution(
+            student_id=student.id,
+            submission_id=new_submission.id,
+            date=date.today(),
+            weight=data.get('weight'),
+            height=data.get('height', student.height),
+            sleep_hours=data.get('sleep_hours'),
+            sleep_quality=data.get('sleep_quality'),
+            training_time=data.get('preferred_time')
+        )
+        db.session.add(evolution)
+        evolution_recorded = True
+        
+        # Atualiza peso do aluno
+        student.weight = data.get('weight')
+    
+    db.session.commit()
+    
+    return jsonify({
+        'message': 'Submission updated successfully',
+        'new_submission': new_submission.to_dict(),
+        'evolution_recorded': evolution_recorded
+    }), 201
+
+
+@bp.route('/me/evolution', methods=['GET'])
+@require_tenant
+@require_auth
+def get_student_evolution():
+    """
+    GET /api/students/me/evolution
+    
+    Retorna dados de evolução do aluno para gráficos
+    
+    Query params:
+    - limit: número máximo de registros (default: 12)
+    
+    Response 200:
+    {
+        "evolutions": [
+            {
+                "date": "2024-01-01",
+                "weight": 70,
+                "sleep_hours": 5,
+                "sleep_quality": "poor"
+            },
+            {
+                "date": "2024-02-01",
+                "weight": 68,
+                "sleep_hours": 6,
+                "sleep_quality": "regular"
+            }
+        ],
+        "summary": {
+            "initial_weight": 70,
+            "current_weight": 62,
+            "weight_change": -8,
+            "avg_sleep_hours": 6.25,
+            "current_sleep_quality": "good",
+            "total_records": 4
+        }
+    }
+    """
+    user = g.current_user
+    limit = request.args.get('limit', 12, type=int)
+    
+    student = Student.query.filter_by(
+        tenant_id=g.tenant_id,
+        email=user.email,
+        is_active=True
+    ).first()
+    
+    if not student:
+        return jsonify({'error': 'Student profile not found'}), 404
+    
+    evolutions = StudentEvolution.query.filter_by(
+        student_id=student.id
+    ).order_by(StudentEvolution.date.asc()).limit(limit).all()
+    
+    if not evolutions:
+        return jsonify({
+            'evolutions': [],
+            'summary': None
+        })
+    
+    # Calcula resumo
+    weights = [e.weight for e in evolutions if e.weight]
+    sleep_hours = [e.sleep_hours for e in evolutions if e.sleep_hours]
+    
+    summary = {
+        'initial_weight': float(weights[0]) if weights else None,
+        'current_weight': float(weights[-1]) if weights else None,
+        'weight_change': float(weights[-1] - weights[0]) if len(weights) >= 2 else 0,
+        'avg_sleep_hours': sum(sleep_hours) / len(sleep_hours) if sleep_hours else None,
+        'current_sleep_quality': evolutions[-1].sleep_quality if evolutions else None,
+        'total_records': len(evolutions)
+    }
+    
+    return jsonify({
+        'evolutions': [
+            {
+                'date': e.date.isoformat(),
+                'weight': float(e.weight) if e.weight else None,
+                'height': float(e.height) if e.height else None,
+                'sleep_hours': e.sleep_hours,
+                'sleep_quality': e.sleep_quality,
+                'training_time': e.training_time
+            }
+            for e in evolutions
+        ],
+        'summary': summary
+    })
+```
+
+### Registrar Blueprint do Portal do Aluno
+
+```python
+# Em app/__init__.py, adicionar:
+
+from app.api import student_portal
+
+app.register_blueprint(student_portal.bp, url_prefix='/api/students')
+```
 
 ---
 
@@ -2479,6 +2937,7 @@ def test_login_invalid_password(client):
 6. **CORS configurável**: Apenas origens permitidas
 7. **Senhas com hash**: bcrypt via Werkzeug
 8. **Tokens de download**: Links únicos com expiração
+9. **Histórico imutável**: Formulários anteriores são preservados para auditoria
 
 ---
 

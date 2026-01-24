@@ -28,7 +28,7 @@ const StudentDashboard = () => {
 
   // Find student by user email/whatsapp (in real app, this would be properly linked)
   const student = allStudents.find(s => 
-    s.tenantId === tenant.id && 
+    s.academiaId === tenant.id && 
     (s.email === user.email || s.name === user.name)
   );
 

@@ -23,8 +23,10 @@ const FormBuilder = () => {
 
   const existingFields = user ? getCustomFieldsByPersonal(user.id) : [];
 
-  const [customFields, setCustomFields] = useState<Omit<CustomField, 'id' | 'tenantId' | 'personalId'>[]>(
+  const [customFields, setCustomFields] = useState<Omit<CustomField, 'id'>[]>(
     existingFields.map(f => ({
+      academiaId: f.academiaId,
+      personalId: f.personalId,
       name: f.name,
       label: f.label,
       type: f.type,
@@ -60,7 +62,9 @@ const FormBuilder = () => {
       .replace(/\s+/g, '_')
       .replace(/[^a-z0-9_]/g, '');
 
-    const field: Omit<CustomField, 'id' | 'tenantId' | 'personalId'> = {
+    const field: Omit<CustomField, 'id'> = {
+      academiaId: user.academiaId || '',
+      personalId: user.id,
       name: fieldName,
       label: newField.label,
       type: newField.type,

@@ -6,7 +6,6 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { TenantProvider } from "@/contexts/TenantContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
-import SystemLayout from "@/components/layout/SystemLayout";
 
 // Pages
 import HomePage from "./pages/HomePage";
@@ -14,21 +13,13 @@ import LoginPage from "./pages/LoginPage";
 import TermsPage from "./pages/TermsPage";
 import PrivacyPage from "./pages/PrivacyPage";
 import NotFound from "./pages/NotFound";
-import OnboardingPage from "./pages/OnboardingPage";
 
-// System Admin Pages (Ficha.Life Admin)
-import SystemDashboard from "./pages/system/SystemDashboard";
-import AcademiasManagement from "./pages/system/AcademiasManagement";
-import PlanosManagement from "./pages/system/PlanosManagement";
-import PagamentosHistory from "./pages/system/PagamentosHistory";
-
-// Gerente Pages (Academia Admin)
-import GerenteDashboard from "./pages/gerente/GerenteDashboard";
-import StaffManagement from "./pages/gerente/StaffManagement";
-import GerenteStudentsList from "./pages/gerente/GerenteStudentsList";
-import GerenteRequestsList from "./pages/gerente/GerenteRequestsList";
-import GerenteSettings from "./pages/gerente/GerenteSettings";
-import ShopManagement from "./pages/gerente/ShopManagement";
+// Admin Pages
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import StaffManagement from "./pages/admin/StaffManagement";
+import AdminStudentsList from "./pages/admin/AdminStudentsList";
+import AdminRequestsList from "./pages/admin/AdminRequestsList";
+import AdminSettings from "./pages/admin/AdminSettings";
 
 // Personal Pages
 import PersonalDashboard from "./pages/personal/PersonalDashboard";
@@ -40,7 +31,6 @@ import InviteLink from "./pages/personal/InviteLink";
 // Student Pages
 import StudentDashboard from "./pages/student/StudentDashboard";
 import StudentForm from "./pages/student/StudentForm";
-import StudentShop from "./pages/student/StudentShop";
 
 const queryClient = new QueryClient();
 
@@ -55,15 +45,6 @@ const App = () => (
             <Routes>
               {/* Home - Landing page */}
               <Route path="/" element={<HomePage />} />
-              
-              {/* Onboarding */}
-              <Route path="/onboarding" element={<OnboardingPage />} />
-
-              {/* System Admin Routes (Ficha.Life Admin) */}
-              <Route path="/admin-system" element={<SystemLayout><SystemDashboard /></SystemLayout>} />
-              <Route path="/admin-system/academias" element={<SystemLayout><AcademiasManagement /></SystemLayout>} />
-              <Route path="/admin-system/planos" element={<SystemLayout><PlanosManagement /></SystemLayout>} />
-              <Route path="/admin-system/pagamentos" element={<SystemLayout><PagamentosHistory /></SystemLayout>} />
 
               {/* Tenant Routes */}
               <Route path="/:slug/login" element={<LoginPage />} />
@@ -71,14 +52,13 @@ const App = () => (
               <Route path="/:slug/privacy" element={<PrivacyPage />} />
               <Route path="/:slug/form/:personalId" element={<StudentForm />} />
 
-              {/* Gerente Routes (Academia Admin) */}
-              <Route path="/:slug/gerente" element={<DashboardLayout />}>
-                <Route index element={<GerenteDashboard />} />
+              {/* Admin Routes */}
+              <Route path="/:slug/admin" element={<DashboardLayout />}>
+                <Route index element={<AdminDashboard />} />
                 <Route path="staff" element={<StaffManagement />} />
-                <Route path="students" element={<GerenteStudentsList />} />
-                <Route path="requests" element={<GerenteRequestsList />} />
-                <Route path="settings" element={<GerenteSettings />} />
-                <Route path="shop" element={<ShopManagement />} />
+                <Route path="students" element={<AdminStudentsList />} />
+                <Route path="requests" element={<AdminRequestsList />} />
+                <Route path="settings" element={<AdminSettings />} />
               </Route>
 
               {/* Personal Routes */}
@@ -91,10 +71,9 @@ const App = () => (
               </Route>
 
               {/* Student Routes */}
-              <Route path="/:slug/aluno" element={<DashboardLayout />}>
+              <Route path="/:slug/student" element={<DashboardLayout />}>
                 <Route index element={<StudentDashboard />} />
                 <Route path="request" element={<StudentForm />} />
-                <Route path="shop" element={<StudentShop />} />
               </Route>
 
               {/* Catch-all */}

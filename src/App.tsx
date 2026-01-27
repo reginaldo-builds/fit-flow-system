@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { TenantProvider } from "@/contexts/TenantContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import SystemAdminLayout from "@/components/layout/SystemAdminLayout";
 
 // Pages
 import HomePage from "./pages/HomePage";
@@ -13,8 +14,21 @@ import LoginPage from "./pages/LoginPage";
 import TermsPage from "./pages/TermsPage";
 import PrivacyPage from "./pages/PrivacyPage";
 import NotFound from "./pages/NotFound";
+import OnboardingPage from "./pages/OnboardingPage";
 
-// Admin Pages
+// System Admin Pages
+import SystemAdminDashboard from "./pages/system/SystemAdminDashboard";
+import SystemAcademiasList from "./pages/system/SystemAcademiasList";
+import SystemPlans from "./pages/system/SystemPlans";
+import SystemPayments from "./pages/system/SystemPayments";
+
+// Gerente (Admin da Academia) Pages
+import GerenteDashboard from "./pages/gerente/GerenteDashboard";
+import GerentePersonais from "./pages/gerente/GerentePersonais";
+import GerenteSettings from "./pages/gerente/GerenteSettings";
+import GerenteLoja from "./pages/gerente/GerenteLoja";
+
+// Admin Pages (legacy - redirect to gerente)
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import StaffManagement from "./pages/admin/StaffManagement";
 import AdminStudentsList from "./pages/admin/AdminStudentsList";
@@ -45,6 +59,17 @@ const App = () => (
             <Routes>
               {/* Home - Landing page */}
               <Route path="/" element={<HomePage />} />
+              
+              {/* Onboarding - Cadastro de nova academia */}
+              <Route path="/onboarding" element={<OnboardingPage />} />
+
+              {/* System Admin Routes (Admin do Sistema) */}
+              <Route path="/system" element={<SystemAdminLayout />}>
+                <Route index element={<SystemAdminDashboard />} />
+                <Route path="academias" element={<SystemAcademiasList />} />
+                <Route path="planos" element={<SystemPlans />} />
+                <Route path="pagamentos" element={<SystemPayments />} />
+              </Route>
 
               {/* Tenant Routes */}
               <Route path="/:slug/login" element={<LoginPage />} />
@@ -52,7 +77,17 @@ const App = () => (
               <Route path="/:slug/privacy" element={<PrivacyPage />} />
               <Route path="/:slug/form/:personalId" element={<StudentForm />} />
 
-              {/* Admin Routes */}
+              {/* Gerente Routes (Admin da Academia) */}
+              <Route path="/:slug/gerente" element={<DashboardLayout />}>
+                <Route index element={<GerenteDashboard />} />
+                <Route path="personais" element={<GerentePersonais />} />
+                <Route path="alunos" element={<AdminStudentsList />} />
+                <Route path="solicitacoes" element={<AdminRequestsList />} />
+                <Route path="loja" element={<GerenteLoja />} />
+                <Route path="configuracoes" element={<GerenteSettings />} />
+              </Route>
+
+              {/* Admin Routes (legacy - mantido para compatibilidade) */}
               <Route path="/:slug/admin" element={<DashboardLayout />}>
                 <Route index element={<AdminDashboard />} />
                 <Route path="staff" element={<StaffManagement />} />
